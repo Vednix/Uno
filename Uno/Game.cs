@@ -69,21 +69,51 @@ namespace Uno
         public static void JoinGame(TSPlayer joiner)
         {
             //debug
-            writeToLog(joiner.UserAccountName + " has joined the game. Index: " + joiner.Index.ToString());
+            writeToLog(joiner.UserAccountName + " has joined the game.");
             players.Add(new UnoPlayer(joiner));
             TSPlayer.All.SendInfoMessage("[Uno] {0} has joined the game!", joiner.Name);
             joiner.SendSuccessMessage("[Uno] You have joined the game!");
+
+            if (joiner.Index == -1)
+                joiner.SendInfoMessage("If you have joined this game from the public IRC chat, and not in a private message with AuroraBot, you will be causing too much chat spam. If you have done so, please '~uno quit' to avoid further spam. Failure to follow this warning may result in an IRC ban.");
         }
 
-        public static void LeaveGame(int leaver)
+        public static void LeaveGame(int leaver, string uname = null)
         {
+            int removedIRCplayer = -1;
+
+            if (leaver == -1)
+            {
+                for (int i = 0; i < players.Count; i++)
+                {
+                    if (!players[i].tsplayer.RealPlayer)
+                    {
+                        if (uname != null)
+                        {
+                            if (uname == players[i].tsplayer.Name)
+                                removedIRCplayer = i;
+                            else
+                                continue;
+                        }
+                        try
+                        {
+                            players[i].tsplayer.SendInfoMessage("//Debug: Checking if you have left the game.");
+                        }
+                        catch
+                        {
+                            removedIRCplayer = i;
+                        }
+                    }
+                }
+            }
+
             for (int i = 0; i < players.Count; i++)
             {
-                if (players[i].tsplayer.Index == leaver)
+                if (players[i].tsplayer.Index == leaver || i == removedIRCplayer)
                 {
                     playerleave = true;
                     //debug
-                    writeToLog(players[i].tsplayer.Name + " has left the game. Index: " + players[i].tsplayer.Index.ToString());
+                    writeToLog(players[i].tsplayer.Name + " has left the game.");
                     broadcast(players[i].tsplayer.Name + " has left the game.");
                     if (state == "active" && checkForWinner())
                         return;
@@ -121,10 +151,10 @@ namespace Uno
         }
         #endregion
 
+        private static Random rand = new Random();
+
         private static void dealCards()
         {
-            Random rand = new Random();
-
             int index;
 
             for (int i = 0; i < players.Count; i++)
@@ -385,12 +415,34 @@ namespace Uno
             }
         }
 
-        public static bool isPlaying(int index)
+        public static bool isPlaying(int index, string uname = null)
         {
             for (int i = 0; i < players.Count; i++)
-                if (index == players[i].tsplayer.Index)
+            {
+                if (index == -1)
+                {
+                    if (players[i].tsplayer.Name == uname)
+                        return true;
+                }
+                else if (index == players[i].tsplayer.Index)
                     return true;
+            }
             return false;
+        }
+
+        public static bool isCurrentTurn(int index, string uname)
+        {
+            if (index == -1)
+            {
+                if (uname == players[turnindex].tsplayer.Name)
+                    return true;
+                else
+                    return false;
+            }
+            if (index == players[turnindex].tsplayer.Index)
+                return true;
+            else
+                return false;
         }
 
         public static void displayHelp(TSPlayer player, List<string> param)

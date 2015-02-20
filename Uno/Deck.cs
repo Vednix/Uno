@@ -11,7 +11,9 @@ namespace Uno
         public static List<Card> thedeck = new List<Card>();
         public static Card faceup;
         public static char color;
-        
+
+        private static Random rand = new Random();
+
         public static void newDeck()
         {
             thedeck = new List<Card>();
@@ -77,7 +79,7 @@ namespace Uno
             if (thedeck.Count == 0)
                 newDeck();
 
-            Random rand = new Random();
+            
             int num;
             num = rand.Next(thedeck.Count);
             UnoGame.players[index].hand.Add(thedeck[num]);

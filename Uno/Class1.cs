@@ -60,12 +60,12 @@ namespace Uno
         {
             DBConnect();
 
-            Commands.ChatCommands.Add(new Command("uno.play", UnoClass, "uno") { AllowServer = false });
-            Commands.ChatCommands.Add(new Command("uno.play", UnoDraw, "draw") { AllowServer = false });
-            Commands.ChatCommands.Add(new Command("uno.play", UnoPass, "pass") { AllowServer = false });
-            Commands.ChatCommands.Add(new Command("uno.play", UnoPlay, "play") { AllowServer = false });
+            Commands.ChatCommands.Add(new Command("uno.play", UnoClass, "uno"));
+            Commands.ChatCommands.Add(new Command("uno.play", UnoDraw, "draw"));
+            Commands.ChatCommands.Add(new Command("uno.play", UnoPass, "pass"));
+            Commands.ChatCommands.Add(new Command("uno.play", UnoPlay, "play"));
             Commands.ChatCommands.Add(new Command("uno.play", UnoCount, "count"));
-            Commands.ChatCommands.Add(new Command("uno.play", UnoCards, "cards") { AllowServer = false });
+            Commands.ChatCommands.Add(new Command("uno.play", UnoCards, "cards"));
             Commands.ChatCommands.Add(new Command("uno.play", UnoStats, "unostats"));
             Commands.ChatCommands.Add(new Command("uno.view", UnoView, "unoview") { AllowServer = false });
         }
@@ -117,7 +117,7 @@ namespace Uno
             {
                 if (args.Parameters.Count == 1 && args.Parameters[0] == "join")
                 {
-                    if (!UnoGame.isPlaying(args.Player.Index))
+                    if (!UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                     {
                         UnoGame.writeToLog("Voting phase, joining game.");
                         UnoGame.JoinGame(args.Player);
@@ -125,10 +125,10 @@ namespace Uno
                     else
                         args.Player.SendErrorMessage("[Uno] You have already joined this game of Uno!");
                 }
-                else if (args.Parameters.Count == 1 && args.Parameters[0] == "quit" && UnoGame.isPlaying(args.Player.Index))
+                else if (args.Parameters.Count == 1 && args.Parameters[0] == "quit" && UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 {
                     UnoGame.writeToLog(args.Player.Name + " quit the game. Calling LeaveGame.");
-                    UnoGame.LeaveGame(args.Player.Index);
+                    UnoGame.LeaveGame(args.Player.Index, args.Player.Name);
                 }
                 else
                 {
@@ -151,10 +151,10 @@ namespace Uno
                     UnoGame.writeToLog("Force-stopping game.");
                     UnoGame.stopGame(args.Player);
                 }
-                else if (args.Parameters.Count == 1 && args.Parameters[0] == "quit" && UnoGame.isPlaying(args.Player.Index))
+                else if (args.Parameters.Count == 1 && args.Parameters[0] == "quit" && UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 {
                     UnoGame.writeToLog(args.Player.Name + " quit the game.");
-                    UnoGame.LeaveGame(args.Player.Index);
+                    UnoGame.LeaveGame(args.Player.Index, args.Player.Name);
                 }
                 else if (args.Parameters.Count == 2 && args.Parameters[0] == "kick" && args.Player.Group.HasPermission("uno.mod"))
                 {
@@ -168,7 +168,7 @@ namespace Uno
                     {
                         UnoGame.writeToLog(listplayers[0].Name + "is kicked from the game. Calling LeaveGame.");
                         TSPlayer kicked = listplayers[0];
-                        UnoGame.LeaveGame(kicked.Index);
+                        UnoGame.LeaveGame(kicked.Index, kicked.Name);
                         UnoGame.broadcast(args.Player.Name + " has kicked " + kicked.Name + " from the game of Uno.");
                     }
                 }
@@ -176,7 +176,7 @@ namespace Uno
                 {
                     if (args.Parameters.Count > 0 && args.Parameters[0] == "start")
                     {
-                        if (UnoGame.isPlaying(args.Player.Index))
+                        if (UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                             args.Player.SendErrorMessage("[Uno] You are already playing a game of Uno!");
                         else
                             args.Player.SendErrorMessage("[Uno] A game of Uno is already in progress!");
@@ -195,18 +195,18 @@ namespace Uno
             UnoGame.writeToLog("UnoGame.state = " + UnoGame.state);
             if (UnoGame.state == "active")
             {
-                UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index) ? "true" : "false"));
-                if (UnoGame.isPlaying(args.Player.Index))
+                UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index, args.Player.Name) ? "true" : "false"));
+                if (UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 {
-                    UnoGame.writeToLog("UnoGame.players[" + UnoGame.turnindex.ToString() + "].tsplayer.Index (" + UnoGame.players[UnoGame.turnindex].tsplayer.Index.ToString() + ") " + (UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index ? "=" : "!") + "= args.Player.Index (" + args.Player.Index + ")");
-                    if (UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index)
+                    UnoGame.writeToLog("UnoGame.isCurrentTurn(" + args.Player.Index.ToString() + ", " + args.Player.Name + ") == " + (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) ? "true" : "false"));
+                    if (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
                     {
                         UnoGame.writeToLog("UnoGame.players[" + UnoGame.turnindex.ToString() + "].hasdrawn == " + (UnoGame.players[UnoGame.turnindex].hasdrawn ? "true" : "false"));
                     }
                 }
             }
 
-            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index) && UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index && !UnoGame.players[UnoGame.turnindex].hasdrawn)
+            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name) && UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) && !UnoGame.players[UnoGame.turnindex].hasdrawn)
             {
                 UnoGame.broadcast(args.Player.Name + " draws a card.");
                 Deck.drawCard(UnoGame.turnindex);
@@ -214,9 +214,9 @@ namespace Uno
                 UnoGame.players[UnoGame.turnindex].hasdrawn = true;
                 UnoGame.writeToLog("HasDrawn = true");
             }
-            else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index))
+            else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] You are not in a game!");
-            else if (UnoGame.players[UnoGame.turnindex].tsplayer.Index != args.Player.Index)
+            else if (!UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] It is not your turn!");
             else if (UnoGame.players[UnoGame.turnindex].hasdrawn)
                 args.Player.SendErrorMessage("[Uno] You have already drawn! You must /pass if you cannot play a card!");
@@ -234,17 +234,17 @@ namespace Uno
             if (UnoGame.state == "active")
             {
                 UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index) ? "true" : "false"));
-                if (UnoGame.isPlaying(args.Player.Index))
+                if (UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 {
-                    UnoGame.writeToLog("UnoGame.players[" + UnoGame.turnindex.ToString() + "].tsplayer.Index (" + UnoGame.players[UnoGame.turnindex].tsplayer.Index.ToString() + ") " + (UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index ? "=" : "!") + "= args.Player.Index (" + args.Player.Index + ")");
-                    if (UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index)
+                    UnoGame.writeToLog("UnoGame.isCurrentTurn(" + args.Player.Index.ToString() + ", " + args.Player.Name + ") == " + (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) ? "true" : "false"));
+                    if (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
                     {
                         UnoGame.writeToLog("UnoGame.players[" + UnoGame.turnindex.ToString() + "].hasdrawn == " + (UnoGame.players[UnoGame.turnindex].hasdrawn ? "true" : "false"));
                     }
                 }
             }
 
-            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index) && UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index && UnoGame.players[UnoGame.turnindex].hasdrawn)
+            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name) && UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) && UnoGame.players[UnoGame.turnindex].hasdrawn)
             {
                 UnoGame.broadcast(args.Player.Name + " passes " + (args.Player.TPlayer.male ? "his" : "her") + " turn.");
                 args.Player.SendSuccessMessage("[Uno] You have passed your turn.");
@@ -252,9 +252,9 @@ namespace Uno
                 UnoGame.writeToLog("TurnTimer disabled, going to next turn.");
                 UnoGame.goToNextTurn();
             }
-            else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index))
+            else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] You are not in a game!");
-            else if (UnoGame.players[UnoGame.turnindex].tsplayer.Index != args.Player.Index)
+            else if (!UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] It is not your turn!");
             else if (!UnoGame.players[UnoGame.turnindex].hasdrawn)
                 args.Player.SendErrorMessage("[Uno] You must /draw before you can /pass!");
@@ -271,15 +271,14 @@ namespace Uno
             UnoGame.writeToLog("UnoGame.state = " + UnoGame.state);
             if (UnoGame.state == "active")
             {
-                UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index) ? "true" : "false"));
-                if (UnoGame.isPlaying(args.Player.Index))
+                UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index, args.Player.Name) ? "true" : "false"));
+                if (UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 {
-                    UnoGame.writeToLog("UnoGame.players[" + UnoGame.turnindex.ToString() + "].tsplayer.Index (" + UnoGame.players[UnoGame.turnindex].tsplayer.Index.ToString() + ") " + (UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index ? "=" : "!") + "= args.Player.Index (" + args.Player.Index + ")");
-                    
+                    UnoGame.writeToLog("UnoGame.isCurrentTurn(" + args.Player.Index.ToString() + ", " + args.Player.Name + ") == " + (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) ? "true" : "false"));
                 }
             }
 
-            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index) && UnoGame.players[UnoGame.turnindex].tsplayer.Index == args.Player.Index)
+            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name) && UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
             {
                 if (args.Parameters.Count > 0 && args.Parameters.Count < 3)
                 {
@@ -311,9 +310,9 @@ namespace Uno
                     args.Player.SendErrorMessage("[Uno] Use /uno help <card> for help on how to play each card.");
                 }
             }
-            else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index))
+            else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] You are not in a game!");
-            else if (UnoGame.players[UnoGame.turnindex].tsplayer.Index != args.Player.Index)
+            else if (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] It is not your turn!");
             else
             {
@@ -357,11 +356,11 @@ namespace Uno
 
         private void UnoCards(CommandArgs args)
         {
-            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index))
+            if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name))
             {
                 for (int i = 0; i < UnoGame.players.Count; i++)
                 {
-                    if (UnoGame.players[i].tsplayer.Index == args.Player.Index)
+                    if (UnoGame.players[i].tsplayer.Name == args.Player.Name)
                     {
                         args.Player.SendInfoMessage("[Uno] Your current cards are {0}. The current card is {1}{2}.", string.Join(" ", UnoGame.players[i].hand.Select(p => p.ToString())), Deck.faceup.ToString(), (Deck.faceup.value == "wild" || Deck.faceup.value == "wdr4" ? " " + Deck.color : ""));
                     }
