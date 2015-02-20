@@ -1,0 +1,12 @@
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\Uno.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\Uno.pdb
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\TerrariaServer.exe
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\TShockAPI.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\MySql.Data.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\HttpServer.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\Mono.Data.Sqlite.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\obj\Debug\Uno.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\obj\Debug\Uno.pdb
+C:\Users\Clay\Documents\GitHub\Uno\Uno\bin\Debug\MySql.Web.dll
+C:\Users\Clay\Documents\GitHub\Uno\Uno\obj\Debug\Uno.csprojResolveAssemblyReference.cache
