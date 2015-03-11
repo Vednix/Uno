@@ -12,6 +12,7 @@ using Mono.Data.Sqlite;
 using System.IO;
 using TShockAPI.DB;
 using System.Collections;
+using TShockAPI.Hooks;
 
 namespace Uno
 {
@@ -24,13 +25,13 @@ namespace Uno
         public double _winpercent;
     }
 
-    [ApiVersion(1,16)]
+    [ApiVersion(1,17)]
     public class UnoMain : TerrariaPlugin
     {
         public override string Name { get { return "UnoPlugin"; } }
         public override string Author { get { return "Zaicon"; } }
         public override string Description { get { return "Plays a game of Uno!"; } }
-        public override Version Version { get { return new Version(1, 0, 0, 0); } }
+        public override Version Version { get { return new Version(1, 0, 1, 0); } }
 
         private static IDbConnection db;
 
@@ -44,6 +45,7 @@ namespace Uno
         {
             ServerApi.Hooks.GameInitialize.Register(this, OnInitialize);
             ServerApi.Hooks.ServerLeave.Register(this, OnLeave);
+			AccountHooks.AccountDelete += OnAccDelete;
         }
 
         protected override void Dispose(bool Disposing)
@@ -52,6 +54,7 @@ namespace Uno
             {
                 ServerApi.Hooks.GameInitialize.Deregister(this, OnInitialize);
                 ServerApi.Hooks.ServerLeave.Deregister(this, OnLeave);
+				AccountHooks.AccountDelete -= OnAccDelete;
             }
             base.Dispose(Disposing);
         }
@@ -74,10 +77,14 @@ namespace Uno
         {
             if (UnoGame.state != "inactive" && UnoGame.isPlaying(args.Who))
             {
-                UnoGame.writeToLog("LeaveGame called: args " + args.Who.ToString());
                 UnoGame.LeaveGame(args.Who);
             }
         }
+
+		private void OnAccDelete(AccountDeleteEventArgs args)
+		{
+			db.Query("DELETE FROM Uno WHERE UserID=@0;", args.User.ID);
+		}
 
         #region unogame
         private void UnoClass(CommandArgs args)
@@ -89,28 +96,21 @@ namespace Uno
                     UnoGame.displayHelp(args.Player, args.Parameters);
                     return;
                 }
-                else if (args.Parameters[0] == "debug")
-                {
-                    UnoGame.debug = !UnoGame.debug;
-                    args.Player.SendSuccessMessage("Debug mode is " + (UnoGame.debug ? "on" : "off"));
-                    return;
-                }
             }
             if (UnoGame.state == "inactive")
             {
                 if (args.Parameters.Count == 1 && args.Parameters[0] == "start")
                 {
-                    UnoGame.writeToLog("Inactive, starting voting phase.");
                     UnoGame.StartVote(args.Player);
                 }
                 else
                 {
                     if (args.Parameters.Count > 0 && (args.Parameters[0] == "join" || args.Parameters[0] == "quit"))
-                        args.Player.SendErrorMessage("[Uno] No game running! Use /uno start to start a game of Uno!");
+                        args.Player.SendErrorMessage("[Uno] No game running! Use {0}uno start to start a game of Uno!", TShock.Config.CommandSpecifier);
                     else if (args.Parameters.Count > 0 && args.Parameters[0] == "stop" && args.Player.Group.HasPermission("uno.mod"))
                         args.Player.SendErrorMessage("[Uno] No game running!");
                     else
-                        args.Player.SendErrorMessage("[Uno] Invalid syntax! Use \"/game start\" to start a game of Uno!");
+						args.Player.SendErrorMessage("[Uno] Invalid syntax! Use \"{0}game start\" to start a game of Uno!", TShock.Config.CommandSpecifier);
                 }
             }
             else if (UnoGame.state == "voting")
@@ -119,7 +119,6 @@ namespace Uno
                 {
                     if (!UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                     {
-                        UnoGame.writeToLog("Voting phase, joining game.");
                         UnoGame.JoinGame(args.Player);
                     }
                     else
@@ -127,33 +126,29 @@ namespace Uno
                 }
                 else if (args.Parameters.Count == 1 && args.Parameters[0] == "quit" && UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 {
-                    UnoGame.writeToLog(args.Player.Name + " quit the game. Calling LeaveGame.");
                     UnoGame.LeaveGame(args.Player.Index, args.Player.Name);
                 }
                 else
                 {
                     if (args.Parameters.Count > 0 && args.Parameters[0] == "start")
-                        args.Player.SendErrorMessage("[Uno] A game of Uno is already started! Use /uno join to join the game!");
+						args.Player.SendErrorMessage("[Uno] A game of Uno is already started! Use {0}uno join to join the game!", TShock.Config.CommandSpecifier);
                     else if (args.Parameters.Count > 0 && args.Parameters[0] == "stop" && args.Player.Group.HasPermission("uno.mod"))
                     {
                         UnoGame.toStartGame.Enabled = false;
-                        UnoGame.writeToLog("Force-stopping game.");
                         UnoGame.stopGame(args.Player);
                     }
                     else
-                        args.Player.SendErrorMessage("[Uno] Invalid syntax! Use \"/game join\" to join the game of Uno!");
+						args.Player.SendErrorMessage("[Uno] Invalid syntax! Use \"{0}game join\" to join the game of Uno!", TShock.Config.CommandSpecifier);
                 }
             }
             else if (UnoGame.state == "active")
             {
                 if (args.Parameters.Count == 1 && args.Parameters[0] == "stop" && args.Player.Group.HasPermission("uno.mod"))
                 {
-                    UnoGame.writeToLog("Force-stopping game.");
                     UnoGame.stopGame(args.Player);
                 }
                 else if (args.Parameters.Count == 1 && args.Parameters[0] == "quit" && UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 {
-                    UnoGame.writeToLog(args.Player.Name + " quit the game.");
                     UnoGame.LeaveGame(args.Player.Index, args.Player.Name);
                 }
                 else if (args.Parameters.Count == 2 && args.Parameters[0] == "kick" && args.Player.Group.HasPermission("uno.mod"))
@@ -166,7 +161,6 @@ namespace Uno
                         TShock.Utils.SendMultipleMatchError(args.Player, listplayers.Select(p => p.Name));
                     else
                     {
-                        UnoGame.writeToLog(listplayers[0].Name + "is kicked from the game. Calling LeaveGame.");
                         TSPlayer kicked = listplayers[0];
                         UnoGame.LeaveGame(kicked.Index, kicked.Name);
                         UnoGame.broadcast(args.Player.Name + " has kicked " + kicked.Name + " from the game of Uno.");
@@ -191,65 +185,33 @@ namespace Uno
 
         private void UnoDraw(CommandArgs args)
         {
-            UnoGame.writeToLog("UnoDraw called.");
-            UnoGame.writeToLog("UnoGame.state = " + UnoGame.state);
-            if (UnoGame.state == "active")
-            {
-                UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index, args.Player.Name) ? "true" : "false"));
-                if (UnoGame.isPlaying(args.Player.Index, args.Player.Name))
-                {
-                    UnoGame.writeToLog("UnoGame.isCurrentTurn(" + args.Player.Index.ToString() + ", " + args.Player.Name + ") == " + (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) ? "true" : "false"));
-                    if (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
-                    {
-                        UnoGame.writeToLog("UnoGame.players[" + UnoGame.turnindex.ToString() + "].hasdrawn == " + (UnoGame.players[UnoGame.turnindex].hasdrawn ? "true" : "false"));
-                    }
-                }
-            }
-
             if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name) && UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) && !UnoGame.players[UnoGame.turnindex].hasdrawn)
             {
                 UnoGame.broadcast(args.Player.Name + " draws a card.");
                 Deck.drawCard(UnoGame.turnindex);
                 args.Player.SendSuccessMessage("[Uno] You have drawn: {0}", UnoGame.players[UnoGame.turnindex].hand.Last());
                 UnoGame.players[UnoGame.turnindex].hasdrawn = true;
-                UnoGame.writeToLog("HasDrawn = true");
             }
             else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] You are not in a game!");
             else if (!UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] It is not your turn!");
             else if (UnoGame.players[UnoGame.turnindex].hasdrawn)
-                args.Player.SendErrorMessage("[Uno] You have already drawn! You must /pass if you cannot play a card!");
+				args.Player.SendErrorMessage("[Uno] You have already drawn! You must {0}pass if you cannot play a card!", TShock.Config.CommandSpecifier);
             else
             {
                 args.Player.SendErrorMessage("[Uno] An error occured.");
-                Log.Error("An error with Uno occurred!");
+                TShock.Log.Error("An error with Uno occurred!");
             }
         }
 
         private void UnoPass(CommandArgs args)
         {
-            UnoGame.writeToLog("UnoPass called.");
-            UnoGame.writeToLog("UnoGame.state = " + UnoGame.state);
-            if (UnoGame.state == "active")
-            {
-                UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index) ? "true" : "false"));
-                if (UnoGame.isPlaying(args.Player.Index, args.Player.Name))
-                {
-                    UnoGame.writeToLog("UnoGame.isCurrentTurn(" + args.Player.Index.ToString() + ", " + args.Player.Name + ") == " + (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) ? "true" : "false"));
-                    if (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
-                    {
-                        UnoGame.writeToLog("UnoGame.players[" + UnoGame.turnindex.ToString() + "].hasdrawn == " + (UnoGame.players[UnoGame.turnindex].hasdrawn ? "true" : "false"));
-                    }
-                }
-            }
-
             if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name) && UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) && UnoGame.players[UnoGame.turnindex].hasdrawn)
             {
                 UnoGame.broadcast(args.Player.Name + " passes " + (args.Player.TPlayer.male ? "his" : "her") + " turn.");
                 args.Player.SendSuccessMessage("[Uno] You have passed your turn.");
                 UnoGame.turnTimer.Enabled = false;
-                UnoGame.writeToLog("TurnTimer disabled, going to next turn.");
                 UnoGame.goToNextTurn();
             }
             else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index, args.Player.Name))
@@ -257,47 +219,33 @@ namespace Uno
             else if (!UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
                 args.Player.SendErrorMessage("[Uno] It is not your turn!");
             else if (!UnoGame.players[UnoGame.turnindex].hasdrawn)
-                args.Player.SendErrorMessage("[Uno] You must /draw before you can /pass!");
+				args.Player.SendErrorMessage("[Uno] You must {0}draw before you can {0}pass!", TShock.Config.CommandSpecifier);
             else
             {
                 args.Player.SendErrorMessage("[Uno] An error occured.");
-                Log.Error("An error with Uno occurred!");
+                TShock.Log.Error("An error with Uno occurred!");
             }
         }
 
         private void UnoPlay(CommandArgs args)
         {
-            UnoGame.writeToLog("UnoPlay called.");
-            UnoGame.writeToLog("UnoGame.state = " + UnoGame.state);
-            if (UnoGame.state == "active")
-            {
-                UnoGame.writeToLog("UnoGame.isPlaying(" + args.Player.Index.ToString() + ") == " + (UnoGame.isPlaying(args.Player.Index, args.Player.Name) ? "true" : "false"));
-                if (UnoGame.isPlaying(args.Player.Index, args.Player.Name))
-                {
-                    UnoGame.writeToLog("UnoGame.isCurrentTurn(" + args.Player.Index.ToString() + ", " + args.Player.Name + ") == " + (UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) ? "true" : "false"));
-                }
-            }
-
             if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name) && UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name))
             {
                 if (args.Parameters.Count > 0 && args.Parameters.Count < 3)
                 {
                     if (!Deck.IsValid(args.Parameters[0]))
                     {
-                        UnoGame.writeToLog("Rejected card; not valid.");
                         args.Player.SendErrorMessage("[Uno] That is not a valid card.");
                         return;
                     }
                     if (!UnoGame.players[UnoGame.turnindex].hasCard(args.Parameters[0]))
                     {
-                        UnoGame.writeToLog("Rejected card; not in hand.");
                         args.Player.SendErrorMessage("[Uno] You do not have that card.");
                         return;
                     }
                     Card card = Deck.parse(args.Parameters[0]);
                     if (card.color != Deck.color && card.value != Deck.faceup.value && card.value != "wild" && card.value != "wdr4")
                     {
-                        UnoGame.writeToLog("Rejected card; not in uno rules.");
                         args.Player.SendErrorMessage("[Uno] You cannot play that card!");
                         return;
                     }
@@ -306,8 +254,8 @@ namespace Uno
                 }
                 else
                 {
-                    args.Player.SendErrorMessage("[Uno] Invalid Syntax: /play <card> [color]");
-                    args.Player.SendErrorMessage("[Uno] Use /uno help <card> for help on how to play each card.");
+					args.Player.SendErrorMessage("[Uno] Invalid Syntax: {0}play <card> [color]", TShock.Config.CommandSpecifier);
+					args.Player.SendErrorMessage("[Uno] Use {0}uno help <card> for help on how to play each card.", TShock.Config.CommandSpecifier);
                 }
             }
             else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index, args.Player.Name))
@@ -317,7 +265,7 @@ namespace Uno
             else
             {
                 args.Player.SendErrorMessage("[Uno] An error occured.");
-                Log.Error("An error with Uno occurred!");
+                TShock.Log.Error("An error with Uno occurred!");
             }
         }
 
@@ -527,7 +475,7 @@ namespace Uno
 
             SqlTableCreator sqlcreator = new SqlTableCreator(db, db.GetSqlType() == SqlType.Sqlite ? (IQueryBuilder)new SqliteQueryCreator() : new MysqlQueryCreator());
 
-            sqlcreator.EnsureExists(new SqlTable("Uno",
+            sqlcreator.EnsureTableStructure(new SqlTable("Uno",
                 new SqlColumn("UserID", MySqlDbType.Int32) { Primary = true, Unique = true, Length = 4 },
                 new SqlColumn("TotalGames", MySqlDbType.Int32) { Length = 5 },
                 new SqlColumn("TotalWins", MySqlDbType.Int32) { Length = 5 },

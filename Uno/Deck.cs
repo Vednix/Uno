@@ -84,7 +84,6 @@ namespace Uno
             num = rand.Next(thedeck.Count);
             UnoGame.players[index].hand.Add(thedeck[num]);
             thedeck.RemoveAt(num);
-            UnoGame.writeToLog("drawing card for turnindex " + index.ToString() + " from deck[" + num.ToString() + "]");
         }
 
         public static bool IsValid(string ucard)
