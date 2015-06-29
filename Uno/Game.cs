@@ -245,10 +245,10 @@ namespace Uno
                     if (players[i].hand.Count != 0)
                     {
                         broadcast(players[i].tsplayer.Name + "'s cards: " + cards + " (" + players[i].totalpoints.ToString() + " points)");
-                        UnoMain.updatepoints(players[i].tsplayer.UserID, players[i].totalpoints);
+                        UnoMain.updatepoints(players[i].tsplayer.User.ID, players[i].totalpoints);
                     }
                     else
-                        UnoMain.updatewinner(players[i].tsplayer.UserID);
+                        UnoMain.updatewinner(players[i].tsplayer.User.ID);
                 }
             }
             turnTimer.Enabled = false;

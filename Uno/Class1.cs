@@ -31,7 +31,7 @@ namespace Uno
         public override string Name { get { return "UnoPlugin"; } }
         public override string Author { get { return "Zaicon"; } }
         public override string Description { get { return "Plays a game of Uno!"; } }
-        public override Version Version { get { return new Version(1, 0, 1, 0); } }
+        public override Version Version { get { return new Version(1, 0, 2, 0); } }
 
         private static IDbConnection db;
 
@@ -347,7 +347,7 @@ namespace Uno
         {
             if (args.Parameters.Count == 0)
             {
-                TShockAPI.DB.User user = TShock.Users.GetUserByName(args.Player.UserAccountName);
+                TShockAPI.DB.User user = TShock.Users.GetUserByName(args.Player.User.Name);
                 displayStats(args.Player, user);
             }
             else if (args.Parameters.Count == 1 && args.Parameters[0] == "all")
