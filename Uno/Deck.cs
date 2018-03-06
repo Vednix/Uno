@@ -6,119 +6,75 @@ using System.Threading.Tasks;
 
 namespace Uno
 {
-    public static class Deck
-    {
-        public static List<Card> thedeck = new List<Card>();
-        public static Card faceup;
-        public static char color;
+	public static class Deck
+	{
+		public static List<Card> thedeck = new List<Card>();
+		public static Card faceup;
+		public static char color;
 
-        private static Random rand = new Random();
+		private static Random rand = new Random();
 
-        public static void newDeck()
-        {
-            thedeck = new List<Card>();
-            for (int i = 0; i < 10; i++)
-            {
-                thedeck.Add(new Card('r', i.ToString()));
-                thedeck.Add(new Card('r', i.ToString()));
-                thedeck.Add(new Card('g', i.ToString()));
-                thedeck.Add(new Card('g', i.ToString()));
-                thedeck.Add(new Card('b', i.ToString()));
-                thedeck.Add(new Card('b', i.ToString()));
-                thedeck.Add(new Card('y', i.ToString()));
-                thedeck.Add(new Card('y', i.ToString()));
-            }
-            thedeck.Add(new Card('r', "dr2"));
-            thedeck.Add(new Card('r', "dr2"));
-            thedeck.Add(new Card('g', "dr2"));
-            thedeck.Add(new Card('g', "dr2"));
-            thedeck.Add(new Card('b', "dr2"));
-            thedeck.Add(new Card('b', "dr2"));
-            thedeck.Add(new Card('y', "dr2"));
-            thedeck.Add(new Card('y', "dr2"));
+		public static void NewDeck()
+		{
+			thedeck = new List<Card>();
+			for (int i = 0; i < Card.rankValues.Count; i++)
+			{
+				thedeck.Add(new Card('r', Card.rankValues[i]));
+				thedeck.Add(new Card('r', Card.rankValues[i]));
+				thedeck.Add(new Card('g', Card.rankValues[i]));
+				thedeck.Add(new Card('g', Card.rankValues[i]));
+				thedeck.Add(new Card('b', Card.rankValues[i]));
+				thedeck.Add(new Card('b', Card.rankValues[i]));
+				thedeck.Add(new Card('y', Card.rankValues[i]));
+				thedeck.Add(new Card('y', Card.rankValues[i]));
+			}
+		}
 
-            thedeck.Add(new Card('r', "r"));
-            thedeck.Add(new Card('r', "r"));
-            thedeck.Add(new Card('g', "r"));
-            thedeck.Add(new Card('g', "r"));
-            thedeck.Add(new Card('b', "r"));
-            thedeck.Add(new Card('b', "r"));
-            thedeck.Add(new Card('y', "r"));
-            thedeck.Add(new Card('y', "r"));
+		public static void DrawCard(int index)
+		{
+			if (thedeck.Count == 0)
+				NewDeck();
 
-            thedeck.Add(new Card('r', "s"));
-            thedeck.Add(new Card('r', "s"));
-            thedeck.Add(new Card('g', "s"));
-            thedeck.Add(new Card('g', "s"));
-            thedeck.Add(new Card('b', "s"));
-            thedeck.Add(new Card('b', "s"));
-            thedeck.Add(new Card('y', "s"));
-            thedeck.Add(new Card('y', "s"));
+			int num;
+			num = rand.Next(thedeck.Count);
+			UnoGame.players[index].hand.Add(thedeck[num]);
+			UnoGame.players[index].hand.Sort(Card.SortCards);
+			thedeck.RemoveAt(num);
+		}
 
-            thedeck.Add(new Card('r', "wild"));
-            thedeck.Add(new Card('r', "wild"));
-            thedeck.Add(new Card('g', "wild"));
-            thedeck.Add(new Card('g', "wild"));
-            thedeck.Add(new Card('b', "wild"));
-            thedeck.Add(new Card('b', "wild"));
-            thedeck.Add(new Card('y', "wild"));
-            thedeck.Add(new Card('y', "wild"));
+		public static bool IsValid(string ucard)
+		{
+			if (ucard.Length < 2 || ucard.Length > 4)
+				return false;
+			if (ucard == "wild" || ucard == "wdr4")
+				return true;
+			if (ucard[0] != 'r' && ucard[0] != 'b' && ucard[0] != 'g' && ucard[0] != 'y')
+				return false;
+			if (ucard.EndsWith("dr2"))
+				return true;
 
-            thedeck.Add(new Card('r', "wdr4"));
-            thedeck.Add(new Card('r', "wdr4"));
-            thedeck.Add(new Card('g', "wdr4"));
-            thedeck.Add(new Card('g', "wdr4"));
-            thedeck.Add(new Card('b', "wdr4"));
-            thedeck.Add(new Card('b', "wdr4"));
-            thedeck.Add(new Card('y', "wdr4"));
-            thedeck.Add(new Card('y', "wdr4"));
-        }
+			int num = -1;
+			bool parsed = int.TryParse(ucard[1].ToString(), out num);
+			if (parsed)
+				return true;
+			if (ucard[1] == 'r' || ucard[1] == 's')
+				return true;
+			if (ucard.Length == 3 && ucard[1] == 'd' && ucard[2] == '2')
+				return true;
+			return false;
+		}
 
-        public static void drawCard(int index)
-        {
-            if (thedeck.Count == 0)
-                newDeck();
+		public static Card Parse(string ucard)
+		{
+			if (ucard == "wild")
+				return new Card('g', "wild");
+			else if (ucard == "wdr4")
+				return new Card('g', "wdr4");
+			else if (ucard.EndsWith("dr2"))
+				return new Card(ucard[0], "dr2");
+			else
+				return new Card(ucard[0], ucard[1].ToString());
+		}
 
-            
-            int num;
-            num = rand.Next(thedeck.Count);
-            UnoGame.players[index].hand.Add(thedeck[num]);
-            thedeck.RemoveAt(num);
-        }
-
-        public static bool IsValid(string ucard)
-        {
-            if (ucard.Length < 2 || ucard.Length > 4)
-                return false;
-            if (ucard == "wild" || ucard == "wdr4")
-                return true;
-            if (ucard[0] != 'r' && ucard[0] != 'b' && ucard[0] != 'g' && ucard[0] != 'y')
-                return false;
-            if (ucard.EndsWith("dr2"))
-                return true;
-
-            int num = -1;
-            bool parsed = int.TryParse(ucard[1].ToString(), out num);
-            if (parsed)
-                return true;
-            if (ucard[1] == 'r' || ucard[1] == 's')
-                return true;
-            if (ucard.Length == 3 && ucard[1] == 'd' && ucard[2] == '2')
-                return true;
-            return false;
-        }
-
-        public static Card parse(string ucard)
-        {
-            if (ucard == "wild")
-                return new Card('g', "wild");
-            else if (ucard == "wdr4")
-                return new Card('g', "wdr4");
-            else if (ucard.EndsWith("dr2"))
-                return new Card(ucard[0], "dr2");
-            else
-                return new Card(ucard[0], ucard[1].ToString());
-        }
-
-    }
+	}
 }
