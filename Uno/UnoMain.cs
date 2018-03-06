@@ -102,6 +102,7 @@ namespace Uno
 				if (args.Parameters.Count == 1 && args.Parameters[0] == "start")
 				{
 					UnoGame.StartVote(args.Player);
+					UnoGame.JoinGame(args.Player);
 				}
 				else
 				{
