@@ -30,16 +30,18 @@ namespace Uno
 			}
 		}
 
-		public static void DrawCard(int index)
+		public static Card DrawCard(int index)
 		{
 			if (thedeck.Count == 0)
 				NewDeck();
 
 			int num;
 			num = rand.Next(thedeck.Count);
-			UnoGame.players[index].hand.Add(thedeck[num]);
+			Card card = thedeck[num];
+			UnoGame.players[index].hand.Add(card);
 			UnoGame.players[index].hand.Sort(Card.SortCards);
 			thedeck.RemoveAt(num);
+			return card;
 		}
 
 		public static bool IsValid(string ucard)

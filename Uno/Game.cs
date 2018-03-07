@@ -32,7 +32,7 @@ namespace Uno
 			toStartGame.Elapsed += whileVoting;
 			toStartGame.Enabled = true;
 			turnTimer = new Timer() { AutoReset = false, Enabled = false, Interval = TimeSpan.FromSeconds(60).TotalMilliseconds };
-			turnTimer.Elapsed += endOfTurn;
+			turnTimer.Elapsed += EndOfTurn;
 		}
 
 		private static void whileVoting(object sender, ElapsedEventArgs args)
@@ -97,7 +97,7 @@ namespace Uno
 				{
 					playerleave = true;
 					broadcast(players[i].tsplayer.Name + " has left the game.");
-					if (state == "active" && checkForWinner())
+					if (state == "active" && CheckForWinner())
 						return;
 					players.RemoveAt(i);
 					if (state == "active" && turnindex == i)
@@ -184,7 +184,7 @@ namespace Uno
 
 			broadcast("It is now " + players[turnindex].tsplayer.Name + "'s turn!");
 			if (Deck.faceup.value == "wild" || Deck.faceup.value == "wdr4")
-				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is" + Deck.faceup.ToString() + ". The current color is " + Deck.color.ToString() + ".", Color.ForestGreen);
+				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ". The current color is " + Deck.color.ToString() + ".", Color.ForestGreen);
 			else
 				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ".", Color.ForestGreen);
 			string hand = string.Join(", ", players[turnindex].hand.Select(p => p));
@@ -193,7 +193,7 @@ namespace Uno
 			turnTimer.Enabled = true;
 		}
 
-		private static void endOfTurn(object sender, ElapsedEventArgs args)
+		private static void EndOfTurn(object sender, ElapsedEventArgs args)
 		{
 			players[turnindex].tsplayer.SendMessage("[Uno] You ran out of time! You are now drawing a card and passing your turn.", Color.ForestGreen);
 			if (!players[turnindex].hasdrawn)
@@ -204,7 +204,7 @@ namespace Uno
 			goToNextTurn();
 		}
 
-		public static bool checkForWinner()
+		public static bool CheckForWinner()
 		{
 			if ((!playerleave ? players.Count : (players.Count - 1)) < 2)
 			{
@@ -237,20 +237,18 @@ namespace Uno
 				for (int i = 0; i < players.Count; i++)
 				{
 					string cards = string.Join(", ", players[i].hand.Select(p => p.ToString()));
+					players[i].totalpoints = 0;
 					foreach (Card card in players[i].hand)
 					{
 						players[i].totalpoints += card.getValuePoint();
 					}
 					if (players[i].hand.Count != 0)
-					{
 						broadcast(players[i].tsplayer.Name + "'s cards: " + cards + " (" + players[i].totalpoints.ToString() + " points)");
-						UnoMain.updatepoints(players[i].tsplayer.User.ID, players[i].totalpoints);
-					}
-					else
-						UnoMain.updatewinner(players[i].tsplayer.User.ID);
+
+					UnoMain.Update(players[i].tsplayer.User.ID, players[i].totalpoints);
 				}
 			}
-			turnTimer.Enabled = false;
+			turnTimer.Stop();
 			watchers.Clear();
 			players.Clear();
 			state = "inactive";
@@ -331,7 +329,7 @@ namespace Uno
 
 			players[turnindex].hand.RemoveAt(cardindex);
 
-			if (checkForWinner())
+			if (CheckForWinner())
 				return;
 
 			if (skip)

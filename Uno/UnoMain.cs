@@ -189,8 +189,8 @@ namespace Uno
 			if (UnoGame.state == "active" && UnoGame.isPlaying(args.Player.Index, args.Player.Name) && UnoGame.isCurrentTurn(args.Player.Index, args.Player.Name) && !UnoGame.players[UnoGame.turnindex].hasdrawn)
 			{
 				UnoGame.broadcast(args.Player.Name + " draws a card.");
-				Deck.DrawCard(UnoGame.turnindex);
-				args.Player.SendSuccessMessage("[Uno] You have drawn: {0}", UnoGame.players[UnoGame.turnindex].hand.Last());
+				var drawnCard = Deck.DrawCard(UnoGame.turnindex);
+				args.Player.SendSuccessMessage("[Uno] You have drawn: {0}", drawnCard);
 				UnoGame.players[UnoGame.turnindex].hasdrawn = true;
 			}
 			else if (UnoGame.state != "active" || !UnoGame.isPlaying(args.Player.Index, args.Player.Name))
@@ -415,38 +415,36 @@ namespace Uno
 			}
 		}
 
-		public static void updatepoints(int userid, int addpoints)
+		public static void Update(int userid, int totalPoints)
 		{
-			string query = "SELECT * FROM Uno WHERE UserID = " + userid.ToString();
-			using (QueryResult reader = db.QueryReader(query))
-			{
-				if (reader.Read())
-				{
-					int currentpoints = reader.Get<int>("TotalPoints");
-					int totalgames = reader.Get<int>("TotalGames");
-					db.Query("UPDATE Uno SET TotalPoints = @0 WHERE UserID = @1;", (currentpoints + addpoints), userid.ToString());
-					db.Query("UPDATE Uno SET TotalGames = @0 WHERE UserID = @1;", (totalgames + 1), userid.ToString());
-				}
-				else
-					db.Query("INSERT INTO Uno (UserID, TotalGames, TotalWins, TotalPoints) VALUES (@0, 1, 0, @1);", userid.ToString(), addpoints.ToString());
-			}
-		}
+			string query = "SELECT * FROM Uno WHERE UserID = @0;";
 
-		public static void updatewinner(int userid)
-		{
-			string query = "SELECT * FROM Uno WHERE UserID = " + userid.ToString();
-			using (QueryResult reader = db.QueryReader(query))
+			int currentPoints = 0;
+			int totalGames = 0;
+			int totalWins = 0;
+
+			using (var reader = db.QueryReader(query, userid))
 			{
 				if (reader.Read())
 				{
-					int currentwins = reader.Get<int>("TotalWins");
-					int totalgames = reader.Get<int>("TotalGames");
-					db.Query("UPDATE Uno SET TotalWins = @0 WHERE UserID = @1;", (currentwins + 1).ToString(), userid.ToString());
-					db.Query("UPDATE Uno SET TotalGames = @0 WHERE UserID = @1;", (totalgames + 1), userid.ToString());
+					currentPoints = reader.Get<int>("TotalPoints");
+					totalGames = reader.Get<int>("TotalGames");
+					totalWins = reader.Get<int>("TotalWins");
 				}
-				else
-					db.Query("INSERT INTO Uno (UserID, TotalGames, TotalWins, TotalPoints) VALUES (@0, 1, 1, 0);", userid.ToString());
 			}
+
+			//if they don't have an entry and they won the game
+			if (totalGames == 0 && totalPoints == 0)
+				db.Query("INSERT INTO Uno (UserID, TotalGames, TotalWins, TotalPoints) VALUES (@0, @1, @2, @3);", userid, 1, 1, 0);
+			//if they don't have an entry and they lost the game
+			else if (totalGames == 0)
+				db.Query("INSERT INTO Uno (UserID, TotalGames, TotalWins, TotalPoints) VALUES (@0, @1, @2, @3);", userid, 1, 0, totalPoints);
+			//if they won the game
+			else if (totalPoints == 0)
+				db.Query($"UPDATE Uno SET TotalWins = @0, TotalGames = @1 WHERE UserID = @2;", totalWins + 1, totalGames + 1, userid);
+			//if they lost the game
+			else
+				db.Query($"UPDATE Uno SET TotalPoints = @0, TotalGames = @1 WHERE UserID = @2;", currentPoints + totalPoints, totalGames + 1, userid);
 		}
 
 		private void DBConnect()

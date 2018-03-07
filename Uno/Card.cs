@@ -57,7 +57,7 @@ namespace Uno
 
 		public static int SortCards(Card card1, Card card2)
 		{
-			if (card1.color == card2.color)
+			if (card1.color != card2.color)
 				return colorValues.IndexOf(card1.color).CompareTo(colorValues.IndexOf(card2.color));
 			else
 				return rankValues.IndexOf(card1.value).CompareTo(rankValues.IndexOf(card2.value));
