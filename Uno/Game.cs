@@ -60,9 +60,6 @@ namespace Uno
 			players.Add(new UnoPlayer(joiner));
 			TSPlayer.All.SendInfoMessage("[Uno] {0} has joined the game!", joiner.Name);
 			joiner.SendSuccessMessage("[Uno] You have joined the game!");
-
-			if (joiner.Index == -1)
-				joiner.SendInfoMessage("If you have joined this game from the public IRC chat, and not in a private message with AuroraBot, you will be causing too much chat spam. If you have done so, please '~uno quit' to avoid further spam. Failure to follow this warning may result in an IRC ban.");
 		}
 
 		public static void LeaveGame(int leaver, string uname = null)
@@ -141,6 +138,7 @@ namespace Uno
 					players[i].hand.Add(Deck.thedeck[index]);
 					Deck.thedeck.RemoveAt(index);
 				}
+				players[i].hand.Sort(Card.SortCards);
 			}
 
 			index = rand.Next(Deck.thedeck.Count);

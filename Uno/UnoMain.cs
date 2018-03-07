@@ -111,7 +111,7 @@ namespace Uno
 					else if (args.Parameters.Count > 0 && args.Parameters[0] == "stop" && args.Player.Group.HasPermission("uno.mod"))
 						args.Player.SendErrorMessage("[Uno] No game running!");
 					else
-						args.Player.SendErrorMessage("[Uno] Invalid syntax! Use \"{0}game start\" to start a game of Uno!", TShock.Config.CommandSpecifier);
+						args.Player.SendErrorMessage("[Uno] Invalid syntax! Use \"{0}uno start\" to start a game of Uno!", TShock.Config.CommandSpecifier);
 				}
 			}
 			else if (UnoGame.state == "voting")
