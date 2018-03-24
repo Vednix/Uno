@@ -1,17 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TerrariaApi.Server;
-using Terraria;
-using TShockAPI;
-using System.Data;
+﻿using Mono.Data.Sqlite;
 using MySql.Data.MySqlClient;
-using Mono.Data.Sqlite;
+using System;
+using System.Collections.Generic;
+using System.Data;
 using System.IO;
+using System.Linq;
+using Terraria;
+using TerrariaApi.Server;
+using TShockAPI;
 using TShockAPI.DB;
-using System.Collections;
 using TShockAPI.Hooks;
 
 namespace Uno
@@ -251,7 +248,7 @@ namespace Uno
 						return;
 					}
 
-					UnoGame.playCard(args.Parameters[0], (args.Parameters.Count == 2 ? args.Parameters[1] : null));
+					UnoGame.PlayCard(args.Parameters[0], (args.Parameters.Count == 2 ? args.Parameters[1] : null));
 				}
 				else
 				{

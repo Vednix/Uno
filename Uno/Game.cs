@@ -22,6 +22,7 @@ namespace Uno
 		public static bool forward = true;
 		private static bool playerleave = false;
 		public static bool debug = false;
+		internal static Color UnoColor = Color.Orchid;
 
 		#region gamestates
 		public static void StartVote(TSPlayer starter)
@@ -45,7 +46,7 @@ namespace Uno
 			if (players.Count < 2)
 			{
 				TSPlayer.All.SendErrorMessage("[Uno] Not enough players joined. The game will not start.");
-				endGame("notenoughplayers");
+				EndGame("notenoughplayers");
 				return;
 			}
 			TSPlayer.All.SendInfoMessage("[Uno] The joining period has ended! The game has begun.");
@@ -120,7 +121,7 @@ namespace Uno
 				player.tsplayer.SendInfoMessage("[Uno] The game has been force-ended by {0}.", stopper.Name);
 			}
 
-			endGame("stopped");
+			EndGame("stopped");
 		}
 		#endregion
 
@@ -184,18 +185,18 @@ namespace Uno
 
 			broadcast("It is now " + players[turnindex].tsplayer.Name + "'s turn!");
 			if (Deck.faceup.value == "wild" || Deck.faceup.value == "wdr4")
-				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ". The current color is " + Deck.color.ToString() + ".", Color.ForestGreen);
+				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ". The current color is " + Deck.color.ToString() + ".", UnoColor);
 			else
-				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ".", Color.ForestGreen);
+				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ".", UnoColor);
 			string hand = string.Join(", ", players[turnindex].hand.Select(p => p));
-			players[turnindex].tsplayer.SendMessage("[Uno] Your current cards are: " + hand, Color.ForestGreen);
-			players[turnindex].tsplayer.SendMessage("[Uno] You have one minute to play a card ({0}play <card> [color]) or draw a card ({0}draw).".SFormat(TShock.Config.CommandSpecifier), Color.ForestGreen);
+			players[turnindex].tsplayer.SendMessage("[Uno] Your current cards are: " + hand, UnoColor);
+			players[turnindex].tsplayer.SendMessage("[Uno] You have one minute to play a card ({0}play <card> [color]) or draw a card ({0}draw).".SFormat(TShock.Config.CommandSpecifier), UnoColor);
 			turnTimer.Enabled = true;
 		}
 
 		private static void EndOfTurn(object sender, ElapsedEventArgs args)
 		{
-			players[turnindex].tsplayer.SendMessage("[Uno] You ran out of time! You are now drawing a card and passing your turn.", Color.ForestGreen);
+			players[turnindex].tsplayer.SendMessage("[Uno] You ran out of time! You are now drawing a card and passing your turn.", UnoColor);
 			if (!players[turnindex].hasdrawn)
 			{
 				Deck.DrawCard(turnindex);
@@ -208,7 +209,7 @@ namespace Uno
 		{
 			if ((!playerleave ? players.Count : (players.Count - 1)) < 2)
 			{
-				endGame("notenoughplayers");
+				EndGame("notenoughplayers");
 				return true;
 			}
 			for (int i = 0; i < players.Count; i++)
@@ -218,7 +219,7 @@ namespace Uno
 				if (players[i].hand.Count == 0)
 				{
 					broadcast(players[i].tsplayer.Name + " wins the game!");
-					endGame("winner");
+					EndGame("winner");
 					return true;
 				}
 			}
@@ -226,7 +227,7 @@ namespace Uno
 			return false;
 		}
 
-		public static void endGame(string reason)
+		public static void EndGame(string reason)
 		{
 			if (reason == "notenoughplayers")
 			{
@@ -255,7 +256,7 @@ namespace Uno
 			TSPlayer.All.SendInfoMessage("[Uno] A game of Uno is complete.");
 		}
 
-		public static void playCard(string card, string color)
+		public static void PlayCard(string card, string color)
 		{
 			Card playcard = new Card('r', "s");
 			int cardindex = 0;
@@ -343,12 +344,12 @@ namespace Uno
 		{
 			for (int i = 0; i < players.Count; i++)
 			{
-				players[i].tsplayer.SendMessage("[Uno] " + message, Color.ForestGreen);
+				players[i].tsplayer.SendMessage("[Uno] " + message, UnoColor);
 			}
 
 			foreach (TSPlayer player in watchers)
 			{
-				player.SendMessage("[Uno] " + message, Color.ForestGreen);
+				player.SendMessage("[Uno] " + message, UnoColor);
 			}
 		}
 
