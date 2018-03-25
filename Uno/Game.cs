@@ -22,7 +22,6 @@ namespace Uno
 		public static bool forward = true;
 		private static bool playerleave = false;
 		public static bool debug = false;
-		internal static Color UnoColor = Color.Orchid;
 
 		#region gamestates
 		public static void StartVote(TSPlayer starter)
@@ -46,7 +45,7 @@ namespace Uno
 			if (players.Count < 2)
 			{
 				TSPlayer.All.SendErrorMessage("[Uno] Not enough players joined. The game will not start.");
-				EndGame("notenoughplayers");
+				endGame("notenoughplayers");
 				return;
 			}
 			TSPlayer.All.SendInfoMessage("[Uno] The joining period has ended! The game has begun.");
@@ -121,7 +120,7 @@ namespace Uno
 				player.tsplayer.SendInfoMessage("[Uno] The game has been force-ended by {0}.", stopper.Name);
 			}
 
-			EndGame("stopped");
+			endGame("stopped");
 		}
 		#endregion
 
@@ -185,18 +184,18 @@ namespace Uno
 
 			broadcast("It is now " + players[turnindex].tsplayer.Name + "'s turn!");
 			if (Deck.faceup.value == "wild" || Deck.faceup.value == "wdr4")
-				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ". The current color is " + Deck.color.ToString() + ".", UnoColor);
+				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToOutput() + ". The current color is " + Deck.color.ToString() + ".", Color.ForestGreen);
 			else
-				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToString() + ".", UnoColor);
+				players[turnindex].tsplayer.SendMessage("[Uno] It is now your turn! The current card is " + Deck.faceup.ToOutput() + ".", Color.ForestGreen);
 			string hand = string.Join(", ", players[turnindex].hand.Select(p => p));
-			players[turnindex].tsplayer.SendMessage("[Uno] Your current cards are: " + hand, UnoColor);
-			players[turnindex].tsplayer.SendMessage("[Uno] You have one minute to play a card ({0}play <card> [color]) or draw a card ({0}draw).".SFormat(TShock.Config.CommandSpecifier), UnoColor);
+			players[turnindex].tsplayer.SendMessage("[Uno] Your current cards are: " + hand, Color.ForestGreen);
+			players[turnindex].tsplayer.SendMessage("[Uno] You have one minute to play a card ({0}play <card> [color]) or draw a card ({0}draw).".SFormat(TShock.Config.CommandSpecifier), Color.ForestGreen);
 			turnTimer.Enabled = true;
 		}
 
 		private static void EndOfTurn(object sender, ElapsedEventArgs args)
 		{
-			players[turnindex].tsplayer.SendMessage("[Uno] You ran out of time! You are now drawing a card and passing your turn.", UnoColor);
+			players[turnindex].tsplayer.SendMessage("[Uno] You ran out of time! You are now drawing a card and passing your turn.", Color.ForestGreen);
 			if (!players[turnindex].hasdrawn)
 			{
 				Deck.DrawCard(turnindex);
@@ -209,7 +208,7 @@ namespace Uno
 		{
 			if ((!playerleave ? players.Count : (players.Count - 1)) < 2)
 			{
-				EndGame("notenoughplayers");
+				endGame("notenoughplayers");
 				return true;
 			}
 			for (int i = 0; i < players.Count; i++)
@@ -219,7 +218,7 @@ namespace Uno
 				if (players[i].hand.Count == 0)
 				{
 					broadcast(players[i].tsplayer.Name + " wins the game!");
-					EndGame("winner");
+					endGame("winner");
 					return true;
 				}
 			}
@@ -227,7 +226,7 @@ namespace Uno
 			return false;
 		}
 
-		public static void EndGame(string reason)
+		public static void endGame(string reason)
 		{
 			if (reason == "notenoughplayers")
 			{
@@ -237,7 +236,7 @@ namespace Uno
 			{
 				for (int i = 0; i < players.Count; i++)
 				{
-					string cards = string.Join(", ", players[i].hand.Select(p => p.ToString()));
+					string cards = string.Join(", ", players[i].hand.Select(p => p.ToOutput()));
 					players[i].totalpoints = 0;
 					foreach (Card card in players[i].hand)
 					{
@@ -256,7 +255,7 @@ namespace Uno
 			TSPlayer.All.SendInfoMessage("[Uno] A game of Uno is complete.");
 		}
 
-		public static void PlayCard(string card, string color)
+		public static void playCard(string card, string color)
 		{
 			Card playcard = new Card('r', "s");
 			int cardindex = 0;
@@ -278,7 +277,7 @@ namespace Uno
 					players[turnindex].tsplayer.SendErrorMessage("[Uno] You must play a color with this card: {0}play wdr4 <r/g/b/y>", TShock.Config.CommandSpecifier);
 					return;
 				}
-				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToString() + " and chooses the color " + color + "!");
+				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToOutput() + " and chooses the color " + color + "!");
 				broadcast("The next player draws four cards.");
 				drawcards = 4;
 				Deck.color = color[0];
@@ -291,20 +290,20 @@ namespace Uno
 					players[turnindex].tsplayer.SendErrorMessage("[Uno] You must play a color with this card: {0}play wild <r/g/b/y>", TShock.Config.CommandSpecifier);
 					return;
 				}
-				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToString() + " and chooses the color " + color + "!");
+				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToOutput() + " and chooses the color " + color + "!");
 				Deck.color = color[0];
 			}
 
 			else if (playcard.value == "r")
 			{
 				forward = !forward;
-				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToString() + "! The turn order is reversed!");
+				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToOutput() + "! The turn order is reversed!");
 				Deck.color = playcard.color;
 			}
 
 			else if (playcard.value == "dr2")
 			{
-				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToString() + "!");
+				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToOutput() + "!");
 				broadcast("The next player draws two cards.");
 				drawcards = 2;
 				Deck.color = playcard.color;
@@ -312,13 +311,13 @@ namespace Uno
 
 			else if (playcard.value != "s")
 			{
-				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToString() + "!");
+				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToOutput() + "!");
 				Deck.color = playcard.color;
 			}
 
 			if (playcard.value == "s")
 			{
-				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToString() + "!");
+				broadcast(players[turnindex].tsplayer.Name + " plays " + playcard.ToOutput() + "!");
 				broadcast(players[turnindex].tsplayer.Name + " skips the next player's turn!");
 				skip = true;
 				Deck.color = playcard.color;
@@ -344,12 +343,12 @@ namespace Uno
 		{
 			for (int i = 0; i < players.Count; i++)
 			{
-				players[i].tsplayer.SendMessage("[Uno] " + message, UnoColor);
+				players[i].tsplayer.SendMessage("[Uno] " + message, Color.ForestGreen);
 			}
 
 			foreach (TSPlayer player in watchers)
 			{
-				player.SendMessage("[Uno] " + message, UnoColor);
+				player.SendMessage("[Uno] " + message, Color.ForestGreen);
 			}
 		}
 

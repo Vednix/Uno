@@ -1,14 +1,17 @@
-﻿using Mono.Data.Sqlite;
-using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
 using System.Linq;
-using Terraria;
+using System.Text;
+using System.Threading.Tasks;
 using TerrariaApi.Server;
+using Terraria;
 using TShockAPI;
+using System.Data;
+using MySql.Data.MySqlClient;
+using Mono.Data.Sqlite;
+using System.IO;
 using TShockAPI.DB;
+using System.Collections;
 using TShockAPI.Hooks;
 
 namespace Uno
@@ -248,7 +251,7 @@ namespace Uno
 						return;
 					}
 
-					UnoGame.PlayCard(args.Parameters[0], (args.Parameters.Count == 2 ? args.Parameters[1] : null));
+					UnoGame.playCard(args.Parameters[0], (args.Parameters.Count == 2 ? args.Parameters[1] : null));
 				}
 				else
 				{
@@ -308,7 +311,7 @@ namespace Uno
 				{
 					if (UnoGame.players[i].tsplayer.Name == args.Player.Name)
 					{
-						args.Player.SendInfoMessage("[Uno] Your current cards are {0}. The current card is {1}{2}.", string.Join(" ", UnoGame.players[i].hand.Select(p => p.ToString())), Deck.faceup.ToString(), (Deck.faceup.value == "wild" || Deck.faceup.value == "wdr4" ? " " + Deck.color : ""));
+						args.Player.SendInfoMessage("[Uno] Your current cards are {0}. The current card is {1}{2}.", string.Join(" ", UnoGame.players[i].hand.Select(p => p.ToOutput())), Deck.faceup.ToOutput(), (Deck.faceup.value == "wild" || Deck.faceup.value == "wdr4" ? " " + Deck.color : ""));
 					}
 				}
 			}

@@ -57,37 +57,25 @@ namespace Uno
 
 		public static int SortCards(Card card1, Card card2)
 		{
-			if (card1.value == "wild")
-			{
-				switch (card2.value)
-				{
-					case "wild":
-						return 0;
-					case "wdr4":
-						return -1;
-					default:
-						return 1;
-				}
-			}
-			else if (card1.value == "wdr4")
-			{
-				switch (card2.value)
-				{
-					case "wdr4":
-						return 0;
-					default:
-						return 1;
-				}
-			}
-			else if (card2.value == "wild" || card2.value == "wdr4")
-				return -1;
-			else if (card1.color != card2.color)
+			if (card1.color != card2.color)
 				return colorValues.IndexOf(card1.color).CompareTo(colorValues.IndexOf(card2.color));
 			else
 				return rankValues.IndexOf(card1.value).CompareTo(rankValues.IndexOf(card2.value));
 		}
 
 		public override string ToString()
+		{
+			string thecard = "";
+			if (value == "wild" || value == "wdr4")
+				thecard = value;
+			else
+			{
+				thecard = color.ToString() + value;
+			}
+			return thecard;
+		}
+
+		public string ToOutput()
 		{
 			if (value == "wild")
 				return $"[c/ff0000:w][c/00ff00:i][c/4c4cff:l][c/ffff00:d]";
